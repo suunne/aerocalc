@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конфигуратор БЛА - АэроКалькулятор</title>
+    <link rel="stylesheet" href="configurator.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="uav-header">
+        <div class="uav-container">
+            <nav class="uav-nav">
+                <div class="uav-logo">
+                    <div class="uav-logo-icon">🛩</div>
+                    <div class="uav-logo-text">АэроКалькулятор</div>
+                </div>
+                <ul class="uav-nav-links">
+                    <li><a href="index.html">Главная</a></li>
+                    <li><a href="configurator.html" class="active">Конфигуратор</a></li>
+                    <li><a href="#about">О проекте</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="configurator-main">
+        <div class="configurator-container">
+            <h1>Конфигуратор БЛА</h1>
+            <p class="subtitle">Расчет параметров беспилотного летательного аппарата самолетного типа</p>
+
+            <!-- Кнопки управления -->
+            <div class="control-buttons">
+                <button id="calculateBtn" class="btn btn-primary">Рассчитать все</button>
+                <button id="saveBtn" class="btn btn-secondary">Сохранить</button>
+                <button id="resetBtn" class="btn btn-warning">Сбросить</button>
+            </div>
+            
+            <div style="margin-top: 20px; background: #1e293b; padding: 15px; border-radius: 8px;">
+                <h3 style="color: #f1f5f9; margin-top: 0; font-size: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    Мои проекты
+                    <button onclick="saveProject()" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">+ Сохранить текущий</button>
+                </h3>
+                <div id="savedProjectsList">
+                    <div style="color: #64748b; font-size: 13px;">Загрузка...</div>
+                </div>
+            </div>
+
+            <!-- ПАРАМЕТРЫ СИСТЕМЫ -->
+            <div class="parameters-row">
+                <h2 class="section-title">Параметры системы</h2>
+                <div class="parameters-grid">
+                    
+                    <!-- Столбец 1: Основные параметры -->
+                    <div class="parameter-column">
+                        <div class="parameter-section">
+                            <h3>Основные параметры</h3>
+                            <div class="section-description">Общие параметры летательного аппарата</div>
+
+                            <div class="input-group">
+                                <label for="flightWeight">Вес модели (AUW)</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="flightWeight" class="input-field" value="1500" step="10" min="0">
+                                    <span class="unit">г</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="motorCount">Кол-во моторов</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="motorCount" class="input-field" value="1" step="1" min="1" max="8">
+                                    <span class="unit">шт</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="wingArea">Площадь крыла</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="wingArea" class="input-field" value="32" step="0.1" min="0">
+                                    <span class="unit">дм²</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="wingSpan">Размах крыла</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="wingSpan" class="input-field" value="1200" step="10" min="0">
+                                    <span class="unit">мм</span>
+                                </div>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label for="dragCoefficient">Лоб. сопротивление</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="dragCoefficient" class="input-field" value="0.03" step="0.01" min="0" max="1">
+                                    <span class="unit">Cx</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="targetSpeed">Максимальная скорость</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="targetSpeed" class="input-field" value="120" step="5" min="0">
+                                    <span class="unit">км/ч</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="altitude">Высота над уровнем моря</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="altitude" class="input-field" value="500" step="10" min="0">
+                                    <span class="unit">м</span>
+                                </div>
+                            </div>
+                             <div class="input-group">
+                                <label for="airPressure">Давление воздуха</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="airPressure" class="input-field" value="1013" step="10" min="800" max="1100">
+                                    <span class="unit">гПа</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="temperature">Температура воздуха</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="temperature" class="input-field" value="20" step="1" min="-50" max="50">
+                                    <span class="unit">℃</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                  <!-- Столбец 2: Аккумулятор (ИСПРАВЛЕНО: value совпадают с JS) -->
+<div class="parameter-column">
+    <div class="parameter-section">
+        <h3>Аккумулятор</h3>
+        <div class="section-description">Настройки батареи питания</div>
+
+        <div class="input-group">
+            <label for="batteryType">Тип батареи</label>
+            <div class="input-with-unit">
+                <select id="batteryType" class="select-field">
+                    <option value="default">Выбрать...</option>
+                    <!-- Значения value теперь точно совпадают с ключами в batteryDatabase -->
+                    <option value="lipo150_80_120">LiPo 150mAh - 80/120C</option>
+                    <option value="lipo1600_80_120">LiPo 1600mAh - 80/120C</option>
+                    <option value="lipo3000_80_120" selected>LiPo 3000mAh - 80/120C</option>
+                    <option value="lipo4500_80_120">LiPo 4500mAh - 80/120C</option>
+                </select>
+            </div>
+        </div>
+         <div class="input-group">
+            <label for="chargeState">Состояние заряда</label>
+            <div class="input-with-unit">
+                <select id="chargeState" class="select-field">
+                     <option value="default">выбрать</option>
+                    <option value="full">Полный</option>
+                    <option value="nominal" selected>Номинал</option>
+                    <option value="low">Низкий</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="batteryCapacity">Емкость</label>
+            <div class="input-with-unit">
+                <input type="number" id="batteryCapacity" class="input-field" value="3000" step="100" min="0">
+                <span class="unit">мАч</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="batteryVoltage">Напряжение</label>
+            <div class="input-with-unit">
+                <input type="number" id="batteryVoltage" class="input-field" value="11.1" step="0.1" min="0">
+                <span class="unit">В</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="batteryWeight">Вес</label>
+            <div class="input-with-unit">
+                <input type="number" id="batteryWeight" class="input-field" value="180" step="1" min="0">
+                <span class="unit">г</span>
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label for="batteryCurrentC">Ток отдачи (C)</label>
+            <div class="input-with-unit">
+                <input type="number" id="batteryCurrentC" class="input-field" value="80" step="1" min="0">
+                <span class="unit">C пост.</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="batteryCurrentMax">Максимальный ток:</label>
+            <div class="input-with-unit">
+                <input type="number" id="batteryCurrentMax" class="input-field" value="120" step="1" min="0">
+                <span class="unit">C макс.</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="batteryResistance">Внутреннее сопротивление</label>
+            <div class="input-with-unit">
+                <input type="number" id="batteryResistance" class="input-field" value="0.025" step="0.001" min="0">
+                <span class="unit">Ом</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="batteryCells">Сборка</label>
+            <div class="input-with-unit">
+                <input type="number" id="batteryCells" class="input-field" value="3" step="1" min="1">
+                <span class="unit">S</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+                    <!-- Столбец 3: Мотор -->
+                    <div class="parameter-column">
+                        <div class="parameter-section">
+                            <h3>Мотор</h3>
+                            <div class="section-description">Характеристики электромотора</div>
+
+                            <div class="input-group">
+                                <label for="motorManufacturer">Производитель</label>
+                                <div class="input-with-unit">
+                                    <select id="motorManufacturer" class="select-field">
+                                        <option value="default">Выберите производителя</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="motorType">Тип мотора</label>
+                                <div class="input-with-unit">
+                                    <select id="motorType" class="select-field" disabled>
+                                        <option value="default">Сначала выберите производителя</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="motorCooling">Охлаждение</label>
+                                <div class="input-with-unit">
+                                    <select id="motorCooling" class="select-field">
+                                        <option value="good" selected>Хорошее</option>
+                                        <option value="average">Среднее</option>
+                                        <option value="poor">Слабое</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="motorKv">KV рейтинг</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="motorKv" class="input-field" value="760" step="100" min="0">
+                                    <span class="unit">об/В</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="motorNoLoadCurrent">Ток без нагрузки:</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="motorNoLoadCurrent" class="input-field" value="1.5" step="0.1" min="0">
+                                    <span class="unit">A</span>
+                                </div>
+                            </div>
+                    
+
+                            <div class="input-group">
+                                <label for="motorMaxPower">Предел (до 15с):</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="motorMaxPower" class="input-field" value="600" step="10" min="0">
+                                    <span class="unit">Вт</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="motorLength">Длина корпуса:</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="motorLength" class="input-field" value="32" step="1" min="0">
+                                    <span class="unit">мм</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="motorMagnets">Кол-во магнитов:</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="motorMagnets" class="input-field" value="14" step="2" min="0">
+                                    <span class="unit">шт</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="motorWeight">Вес мотора</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="motorWeight" class="input-field" value="85" step="5" min="0">
+                                    <span class="unit">г</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="motorResistance">Сопротивление мотора</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="motorResistance" class="input-field" value="0.05" step="0.01" min="0">
+                                    <span class="unit">Ом</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Столбец 4: Пропеллер (ИСПРАВЛЕНО: value совпадают с JS) -->
+                    <div class="parameter-column">
+                        <div class="parameter-section">
+                            <h3>Пропеллер</h3>
+                            <div class="section-description">Характеристики воздушного винта</div>
+
+                            <div class="input-group">
+                                <label for="propType">Тип</label>
+                                <div class="input-with-unit">
+                                    <select id="propType" class="select-field">
+                                        <!-- Значения value теперь точно совпадают с ключами в propellerDatabase -->
+                                        <option value="generic_thin">Generic - thin</option>
+                                        <option value="generic_normal">Generic - normal</option>
+                                        <option value="generic_wide" selected>Generic - wide</option>
+                                        <option value="aeronaut_camcarbon">Aeronaut CamCarbon</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="propTwistAngle">Угол кручения:</label>
+                                <div class="input-with-unit">
+                                    <select id="propTwistAngle" class="select-field">
+                                        <option value="+7.0°">+7.0°</option>
+                                        <option value="+6.0°" selected>+6.0°</option>
+                                        <option value="+5.0°">+5.0°</option>
+                                        <option value="+3.5°">+3.5°</option>
+                                        <option value="0°">0°</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="propDiameter">Диаметр</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="propDiameter" class="input-field" value="10" step="0.5" min="0">
+                                    <span class="unit">дюйм</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="propPitch">Шаг</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="propPitch" class="input-field" value="6" step="0.5" min="0">
+                                    <span class="unit">дюйм</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="propBlades">Кол-во лопастей</label>
+                                <div class="input-with-unit">
+                                    <select id="propBlades" class="select-field">
+                                        <option value="2">2 лопасти</option>
+                                        <option value="3" selected>3 лопасти</option>
+                                        <option value="4">4 лопасти</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="flightSpeed">Скорость полета:</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="flightSpeed" class="input-field" value="80" step="5" min="0">
+                                    <span class="unit">км/ч</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Столбец 5: Регулятор (ИСПРАВЛЕНО: value совпадают с JS) -->
+                    <div class="parameter-column">
+                        <div class="parameter-section">
+                            <h3>Регулятор (ESC)</h3>
+                            <div class="section-description">Настройки электронного регулятора</div>
+
+                          <div class="input-group">
+                    <label for="escModel">Модель регулятора</label>
+                    <div class="input-with-unit">
+                        <select id="escModel" class="select-field">
+                            <option value="default">выбрать</option>
+                            <!-- Значения value теперь точно совпадают с ключами в escDatabase -->
+                            <option value="hobbywing_skywalker_30a">Hobbywing Skywalker 30A</option>
+                            <option value="hobbywing_skywalker_40a" selected>Hobbywing Skywalker 40A</option>
+                            <option value="hobbywing_skywalker_50a">Hobbywing Skywalker 50A</option>
+                            <option value="hobbywing_skywalker_60a">Hobbywing Skywalker 60A</option>
+                        </select>
+                    </div>
+                </div>
+                            <div class="input-group">
+                                <label for="escCurrentContinuous">Ток непрерывный</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="escCurrentContinuous" class="input-field" value="40" step="1" min="0">
+                                    <span class="unit">A</span>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="escWireLength">Длина проводов до батареи</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="escWireLength" class="input-field" value="15" step="1" min="5">
+                                    <span class="unit">см</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="escCurrentMax">Ток максимальный</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="escCurrentMax" class="input-field" value="60" step="1" min="0">
+                                    <span class="unit">A</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="escWeight">Вес регулятора</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="escWeight" class="input-field" value="35" step="1" min="0">
+                                    <span class="unit">г</span>
+                                </div>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label for="escLength">Длина регулятора</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="escLength" class="input-field" value="40" step="1" min="0">
+                                    <span class="unit">мм</span>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="escResistance">Сопротивление:</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="escResistance" class="input-field" value="0.005" step="0.001" min="0">
+                                    <span class="unit">Ом</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+              <!-- Блок фильтрации по цене и итоговой стоимости -->
+<div class="price-filter-section" style="margin-top: 20px; padding: 15px; background: #1e293b; border-radius: 8px; border: 1px solid #334155;">
+    <h3 style="color: #f1f5f9; margin-top: 0; font-size: 16px;">💰 Бюджет и Стоимость</h3>
+    
+    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+        <label for="budgetFilter" style="color: #94a3b8; font-size: 14px;">Макс. бюджет:</label>
+        <input type="number" id="budgetFilter" class="input-field" placeholder="0" min="0" step="500" 
+               style="background: #0f172a; border: 1px solid #475569; color: white; padding: 6px 10px; border-radius: 4px; width: 130px;">
+        <span style="color: #64748b; font-size: 12px;">(₽)</span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #334155; padding-top: 10px;">
+        <span style="color: #f1f5f9; font-weight: bold;">Итоговая смета:</span>
+        <span id="totalCostDisplay" style="font-size: 18px; font-weight: bold; color: #10b981;">0 ₽</span>
+    </div>
+    
+    <div style="margin-top: 8px; font-size: 11px; color: #64748b;">
+        * Включено: моторы, ESC, АКБ и пропеллеры (2 шт/мотор).
+    </div>
+</div>
+
+<div id="budgetRecommendations" style="margin-top: 15px; padding: 12px; background-color: #0f172a; border-radius: 6px; border-left: 4px solid #3b82f6; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; line-height: 1.5; color: #f1f5f9;">
+    <div style="color: #94a3b8; font-style: italic;">Ожидание ввода бюджета...</div>
+</div>
+
+
+            <!-- ДИАГРАММЫ ЭФФЕКТИВНОСТИ -->
+            <div class="charts-row">
+                <h2 class="section-title">Анализ эффективности системы</h2>
+                <div class="charts-container">
+                    <div class="chart-wrapper">
+                        <div class="chart-header">
+                            <h3>Радар эффективности</h3>
+                            <span class="chart-subtitle">Сравнение ключевых параметров с оптимальными значениями</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="efficiencyRadarChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <div class="chart-header">
+                            <h3>Распределение мощности</h3>
+                            <span class="chart-subtitle">Баланс мощности между компонентами системы</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="powerChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- РЕЗУЛЬТАТЫ РАСЧЕТОВ -->
+            <div class="results-row">
+                <h2 class="section-title">Результаты расчетов</h2>
+                <div class="results-grid">
+                    
+                    <!-- Результаты 1: Аккумулятор -->
+                    <div class="result-column">
+                        <div class="result-section">
+                            <h3>Аккумулятор</h3>
+                            <div class="result-item">
+                                <span class="result-label">Нагрузка на крыло</span>
+                                <span id="resultWingLoading" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Напряжение под нагрузкой:</span>
+                                <span id="resultVoltageUnderLoad" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Номинальное напряжение:</span>
+                                <span id="resultNominalVoltage" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Энергия:</span>
+                                <span id="resultEnergy" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Общая емкость:</span>
+                                <span id="resultTotalCapacity" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Использованная емкость:</span>
+                                <span id="resultUsedCapacity" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Мин. Полетное время:</span>
+                                <span id="resultMinFlightTime" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Смешанное полетное время:</span>
+                                <span id="resultMixedFlightTime" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Вес:</span>
+                                <span id="resultBatteryWeight" class="result-value">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Результаты 2: Мотор @ Оптимальный режим -->
+                    <div class="result-column">
+                        <div class="result-section">
+                            <h3>Мотор Оптимальный режим</h3>
+                            <div class="result-item">
+                                <span class="result-label">Ток:</span>
+                                <span id="resultMotorCurrent" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Напряжение:</span>
+                                <span id="resultMotorVoltage" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Обороты:</span>
+                                <span id="resultMotorRpm" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Элект. мощность</span>
+                                <span id="resultElectricalPower" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Механ. мощность</span>
+                                <span id="resultMechanicalPower" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Эффективность</span>
+                                <span id="resultMotorEfficiency" class="result-value">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Результаты 3: Мотор @ Максимальный режим -->
+                    <div class="result-column">
+                        <div class="result-section">
+                            <h3>Мотор Максимальный режим</h3>
+                            <div class="result-item">
+                                <span class="result-label">Ток</span>
+                                <span id="resultMotorCurrentMax" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Напряжение</span>
+                                <span id="resultMotorVoltageMax" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Обороты</span>
+                                <span id="resultMotorRpmMax" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Элект. мощность</span>
+                                <span id="resultElectricalPowerMax" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Механ. мощность</span>
+                                <span id="resultMechanicalPowerMax" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Эффективность</span>
+                                <span id="resultMotorEfficiencyMax" class="result-value">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Результаты 4: Пропеллер -->
+                    <div class="result-column">
+                        <div class="result-section">
+                            <h3>Пропеллер</h3>
+                            <div class="result-item">
+                                <span class="result-label">Статическая тяга</span>
+                                <span id="resultStaticThrust" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Обороты:</span>
+                                <span id="resultPropRpm" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Тяга срыва</span>
+                                <span id="resultStallThrust" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Тяга при 0 км/ч</span>
+                                <span id="resultZeroSpeedThrust" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Скорость потока</span>
+                                <span id="resultFlowSpeed" class="result-value">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Результаты 5: Параметры ВМГ -->
+                    <div class="result-column">
+                        <div class="result-section">
+                            <h3>Параметры ВМГ</h3>
+                            <div class="result-item">
+                                <span class="result-label">Вес ВМГ</span>
+                                <span id="resultPropulsionWeight" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Удельная мощность</span>
+                                <span id="resultPowerLoading" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Тяговооруженность</span>
+                                <span id="resultThrustToWeight" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Ток макс</span>
+                                <span id="resultCurrentMax" class="result-value">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Мощность(вх.) макс</span>
+                                <span id="resultInputPowerMax" class="result-value">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Сводка системы -->
+            <div class="system-summary">
+                <h2>Сводка системы</h2>
+                <div id="systemSummary" class="summary-content">
+                    Введите параметры системы для получения полной сводки и рекомендаций.
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="uav-footer">
+        <div class="configurator-container">
+            <p>&copy; 2025 АэроКалькулятор. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <script src="configurator.js"></script>
+</body>
+</html>
+
