@@ -488,14 +488,24 @@ function performCalculations(params, airDensity) {
     results.stallThrust = Math.max(results.staticThrust * 0.85, 0);
     results.flowSpeed = (results.propRpm * propPitchM * 60 / 1000) * 3.6;
     
-    const totalStaticThrust = Math.max(results.staticThrust * params.motorCount, 0);
+        const totalStaticThrust = Math.max(results.staticThrust * params.motorCount, 0);
     results.thrustToWeight = totalStaticThrust / Math.max(params.flightWeight, 0.001);
     results.powerLoading = (results.electricalPowerOptimal * params.motorCount) / Math.max(weightKg, 0.001);
     
+    // --- ИСПРАВЛЕНИЕ: Проверка возможности взлета ---
     const usableCapacity = Math.max(capacityAh * PHYSICS.DISCHARGE_SAFETY, 0);
     const averageCurrent = Math.max(results.motorCurrentOptimal * params.motorCount * 0.6, 0);
-    results.minFlightTime = averageCurrent > 0 ? (usableCapacity / averageCurrent) * 60 : 0;
-    results.mixedFlightTime = Math.max(results.minFlightTime * 1.3, 0);
+    
+    if (results.thrustToWeight < 1.0) {
+        results.minFlightTime = 0;
+        results.mixedFlightTime = 0;
+    } else {
+        results.minFlightTime = averageCurrent > 0 ? (usableCapacity / averageCurrent) * 60 : 0;
+        results.mixedFlightTime = Math.max(results.minFlightTime * 1.3, 0);
+    }
+    // ----------------------------------------------
+
+
     
     results.totalCapacityWh = Math.max(results.batteryEnergy, 0);
     results.usedCapacity = Math.max(usableCapacity * 1000, 0);
@@ -725,95 +735,158 @@ function initBudgetFilter() {
 }
 
 // ==========================================
-// 8. ГРАФИКИ
+// 8. ГРАФИКИ (ИСПРАВЛЕНО)
 // ==========================================
 
 function initializeCharts() {
     const radarCanvas = document.getElementById('efficiencyRadarChart');
     const powerCanvas = document.getElementById('powerChart');
-    if (!radarCanvas || !powerCanvas) return;
     
-    const radarCtx = radarCanvas.getContext('2d');
-    efficiencyRadarChart = new Chart(radarCtx, {
-        type: 'radar',
-        data: {
-            labels: ['Тяговооруженность', 'Запас по ESC', 'Запас по батарее', 'Время полета', 'Эффективность', 'Скорость'],
-            datasets: [{
-                label: 'Текущая система',
-                data: [50, 70, 65, 50, 75, 60],
-                backgroundColor: 'rgba(56, 189, 248, 0.2)',
-                borderColor: 'rgba(56, 189, 248, 1)',
-                borderWidth: 2,
-                pointBackgroundColor: 'rgba(56, 189, 248, 1)'
-            }, {
-                label: 'Оптимальные значения',
-                data: [80, 80, 80, 80, 80, 80],
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                borderColor: 'rgba(16, 185, 129, 0.5)',
-                borderWidth: 1,
-                borderDash: [5, 5],
-                pointBackgroundColor: 'rgba(16, 185, 129, 0.5)'
-            }]
-        },
-        options: {
-            scales: { 
-                r: { 
-                    angleLines: { color: 'rgba(255, 255, 255, 0.1)' }, 
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
-                    pointLabels: { color: '#f1f5f9', font: { size: 11 } }, 
-                    ticks: { display: false, max: 100, min: 0 }, 
-                    suggestedMin: 0, 
-                    suggestedMax: 100 
-                } 
+    // Проверка наличия Canvas элементов
+    if (!radarCanvas || !powerCanvas) {
+        console.warn('Элементы canvas для графиков не найдены в HTML.');
+        return;
+    }
+
+    // Проверка наличия библиотеки Chart.js
+    if (typeof Chart === 'undefined') {
+        console.error('Библиотека Chart.js не подключена! Добавьте <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> в ваш HTML.');
+        powerCanvas.parentNode.innerHTML = '<div style="color: #ef4444; text-align: center;">Ошибка: Библиотека графиков не загружена.</div>';
+        return;
+    }
+    
+    try {
+        const radarCtx = radarCanvas.getContext('2d');
+        efficiencyRadarChart = new Chart(radarCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Тяговооруженность', 'Запас по ESC', 'Запас по батарее', 'Время полета', 'Эффективность', 'Скорость'],
+                datasets: [{
+                    label: 'Текущая система',
+                    data: [50, 70, 65, 50, 75, 60],
+                    backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                    borderColor: 'rgba(56, 189, 248, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(56, 189, 248, 1)'
+                }, {
+                    label: 'Оптимальные значения',
+                    data: [80, 80, 80, 80, 80, 80],
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderColor: 'rgba(16, 185, 129, 0.5)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    pointBackgroundColor: 'rgba(16, 185, 129, 0.5)'
+                }]
             },
-            plugins: { 
-                legend: { display: true, position: 'bottom', labels: { color: '#f1f5f9', font: { size: 11 } } } 
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { 
+                    r: { 
+                        angleLines: { color: 'rgba(255, 255, 255, 0.1)' }, 
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
+                        pointLabels: { color: '#f1f5f9', font: { size: 11 } }, 
+                        ticks: { display: false, max: 100, min: 0, backdropColor: 'transparent' }, 
+                        suggestedMin: 0, 
+                        suggestedMax: 100 
+                    } 
+                },
+                plugins: { 
+                    legend: { display: true, position: 'bottom', labels: { color: '#f1f5f9', font: { size: 11 } } } 
+                }
             }
-        }
-    });
-    
-    const powerCtx = powerCanvas.getContext('2d');
-    powerChart = new Chart(powerCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Полезная мощность', 'Потери в моторе', 'Потери в ESC', 'Потери в батарее'],
-            datasets: [{
-                data: [70, 15, 8, 7],
-                backgroundColor: ['rgba(16, 185, 129, 0.8)', 'rgba(239, 68, 68, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(59, 130, 246, 0.8)'],
-                borderColor: ['rgba(16, 185, 129, 1)', 'rgba(239, 68, 68, 1)', 'rgba(245, 158, 11, 1)', 'rgba(59, 130, 246, 1)'],
-                borderWidth: 1
-            }]
-        },
-        options: { 
-            responsive: true, 
-            plugins: { 
-                legend: { position: 'bottom', labels: { color: '#f1f5f9', font: { size: 11 } } } 
-            } 
-        }
-    });
+        });
+        
+        const powerCtx = powerCanvas.getContext('2d');
+        powerChart = new Chart(powerCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Полезная мощность', 'Потери в моторе', 'Потери в ESC', 'Потери в батарее'],
+                datasets: [{
+                    data: [70, 15, 8, 7],
+                    backgroundColor: ['rgba(16, 185, 129, 0.8)', 'rgba(239, 68, 68, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(59, 130, 246, 0.8)'],
+                    borderColor: ['rgba(16, 185, 129, 1)', 'rgba(239, 68, 68, 1)', 'rgba(245, 158, 11, 1)', 'rgba(59, 130, 246, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: { 
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { position: 'bottom', labels: { color: '#f1f5f9', font: { size: 11 } } } 
+                } 
+            }
+        });
+    } catch (e) {
+        console.error("Ошибка инициализации графиков:", e);
+    }
 }
 
 function updateCharts(results) {
     if (!efficiencyRadarChart || !powerChart) return;
+    
     try {
+        // --- Обновление Radar Chart ---
         const thrustScore = Math.min(100, Math.max(20, results.thrustToWeight * 40));
-        const escMarginScore = results.params.esc.currentContinuous > 0 ? Math.min(100, Math.max(0, (results.currentMarginESC / results.params.esc.currentContinuous) * 100)) : 50;
+        
+        // Защита от деления на ноль
+        const escMax = results.params.esc.currentContinuous > 0 ? results.params.esc.currentContinuous : 1;
+        const escMarginScore = Math.min(100, Math.max(0, (results.currentMarginESC / escMax) * 100));
+        
         const batteryCapacityAh = results.params.battery.capacity / 1000;
         const maxBatteryCurrent = batteryCapacityAh * results.params.battery.currentC;
-        const batteryMarginScore = maxBatteryCurrent > 0 ? Math.min(100, Math.max(0, (results.currentMarginBattery / maxBatteryCurrent) * 100)) : 50;
+        const batMax = maxBatteryCurrent > 0 ? maxBatteryCurrent : 1;
+        const batteryMarginScore = Math.min(100, Math.max(0, (results.currentMarginBattery / batMax) * 100));
+        
         const timeScore = Math.min(100, Math.max(0, results.mixedFlightTime * 6));
         const efficiencyScore = Math.min(100, results.motorEfficiencyOptimal);
-        const speedScore = results.params.targetSpeed > 0 ? Math.min(100, Math.max(0, (results.theoreticalMaxSpeed / results.params.targetSpeed) * 100)) : 50;
+        
+        const targetSpeed = results.params.targetSpeed > 0 ? results.params.targetSpeed : 100;
+        const speedScore = Math.min(100, Math.max(0, (results.theoreticalMaxSpeed / targetSpeed) * 100));
         
         efficiencyRadarChart.data.datasets[0].data = [thrustScore, escMarginScore, batteryMarginScore, timeScore, efficiencyScore, speedScore];
-        efficiencyRadarChart.update();
+        efficiencyRadarChart.update('none'); // 'none' для производительности
         
-        const usefulPower = results.motorEfficiencyOptimal;
-        const motorLoss = 100 - results.motorEfficiencyOptimal;
-        powerChart.data.datasets[0].data = [usefulPower, motorLoss, 3, 2];
-        powerChart.update();
-    } catch (error) { console.error('Ошибка обновления графиков:', error); }
+        // --- Обновление Power Chart (Doughnut) ---
+        // Расчет реальных потерь вместо фиксированных чисел
+        const usefulPower = results.motorEfficiencyOptimal; // % КПД мотора
+        const motorLoss = 100 - usefulPower; // % потерь в моторе
+        
+        // Расчет потерь в процентах от общей мощности
+        const totalPowerW = results.electricalPowerOptimal * results.params.motorCount;
+        
+        let escLossPercent = 0;
+        let battLossPercent = 0;
+        
+        if (totalPowerW > 0) {
+            // P_loss = I^2 * R
+            const currentPerMotor = results.motorCurrentOptimal;
+            const escLossW = (currentPerMotor * currentPerMotor * results.params.esc.resistance) * results.params.motorCount;
+            
+            const totalCurrent = currentPerMotor * results.params.motorCount;
+            const battResistanceTotal = results.params.battery.resistance * results.params.battery.s;
+            const battLossW = totalCurrent * totalCurrent * battResistanceTotal;
+            
+            escLossPercent = (escLossW / totalPowerW) * 100;
+            battLossPercent = (battLossW / totalPowerW) * 100;
+        }
+        
+        // Нормализация, чтобы сумма была близка к 100% (визуально)
+        // Но лучше показывать абсолютные доли от 100% базы
+        const safeUseful = Math.max(0, usefulPower);
+        const safeMotorLoss = Math.max(0, motorLoss);
+        const safeEscLoss = Math.max(0, escLossPercent);
+        const safeBattLoss = Math.max(0, battLossPercent);
+        
+        powerChart.data.datasets[0].data = [safeUseful, safeMotorLoss, safeEscLoss, safeBattLoss];
+        powerChart.update('none');
+        
+    } catch (error) { 
+        console.error('Ошибка обновления графиков:', error); 
+    }
 }
+
+
 
 // ==========================================
 // 9. СВОДКА С РЕЙТИНГОМ
@@ -1101,4 +1174,5 @@ notificationStyles.textContent = `@keyframes slideIn { from { transform: transla
 document.head.appendChild(notificationStyles);
 
 console.log('Configurator PRO loaded successfully');
+ 
 
