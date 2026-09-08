@@ -1,4 +1,4 @@
-// configurator.js - ФИНАЛЬНАЯ ВЕРСИЯ (Работа с существующим HTML)
+// configurator.js - ИСПРАВЛЕННАЯ ВЕРСИЯ (Нормализация нагрузки на крыло)
 
 // ==========================================
 // 1. БАЗЫ ДАННЫХ
@@ -82,22 +82,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Инициализация всех компонентов
     initMotorSelection();
     initPropellerSelection();
-    initEscSelection();      // Теперь не ломает HTML
-    initBatterySelection();  // Теперь не ломает HTML
+    initEscSelection();      
+    initBatterySelection();  
     
     initializeEventListeners();
     initializeCharts();
     initBudgetFilter();
     loadSavedProjects();
     
-    // Небольшая задержка для гарантированной отрисовки перед первым расчетом
     setTimeout(() => {
         calculateAll();
     }, 100);
 });
 
 // ==========================================
-// 4. УПРАВЛЕНИЕ КОМПОНЕНТАМИ (ИСПРАВЛЕНО)
+// 4. УПРАВЛЕНИЕ КОМПОНЕНТАМИ
 // ==========================================
 
 function formatManufacturerName(key) {
@@ -105,13 +104,11 @@ function formatManufacturerName(key) {
     return names[key] || key;
 }
 
-// --- МОТОРЫ (Здесь список пуст в HTML, поэтому создаем его) ---
 function initMotorSelection() {
     const manufacturerSelect = document.getElementById('motorManufacturer');
     const typeSelect = document.getElementById('motorType');
     if (!manufacturerSelect || !typeSelect) return;
     
-    // Заполняем производителей (список пуст в HTML)
     manufacturerSelect.innerHTML = '';
     Object.keys(motorManufacturers).forEach(key => {
         const option = document.createElement('option');
@@ -136,7 +133,6 @@ function initMotorSelection() {
         }
     });
     
-    // Инициализация первого производителя
     updateMotorTypes('actro');
 }
 
@@ -179,16 +175,13 @@ function updateMotorParameters(motor) {
     setFieldValue('motorNoLoadCurrent', (motor.io || (motor.kv * 0.001)).toFixed(2));
 }
 
-// --- ПРОПЕЛЛЕРЫ (НЕ ПЕРЕПИСЫВАЕМ, если опции уже есть) ---
 function initPropellerSelection() {
     const propTypeSelect = document.getElementById('propType');
     if (!propTypeSelect) return;
     
-    // ПРОВЕРКА: Если в списке уже есть опции (кроме дефолтной), не трогаем HTML
     const hasOptions = propTypeSelect.options.length > 1;
     
     if (!hasOptions) {
-        // Если пусто, заполняем из базы (резервный вариант)
         propTypeSelect.innerHTML = '';
         Object.keys(propellerDatabase).forEach(key => {
             const option = document.createElement('option');
@@ -198,19 +191,16 @@ function initPropellerSelection() {
         });
         propTypeSelect.value = 'generic_wide';
     } else {
-        // Если опции есть в HTML, просто убеждаемся, что выбрано корректное значение
         if (!propellerDatabase[propTypeSelect.value]) {
             propTypeSelect.value = 'generic_wide';
         }
     }
     
-    // Вешаем обработчик
     propTypeSelect.addEventListener('change', function() {
         updatePropellerParams();
         calculateAll();
     });
     
-    // Первичное обновление
     updatePropellerParams();
 }
 
@@ -224,7 +214,6 @@ function updatePropellerParams() {
     }
 }
 
-// --- РЕГУЛЯТОРЫ (ESC) (НЕ ПЕРЕПИСЫВАЕМ, если опции уже есть) ---
 function initEscSelection() {
     const escSelect = document.getElementById('escModel');
     if (!escSelect) return;
@@ -232,7 +221,6 @@ function initEscSelection() {
     const hasOptions = escSelect.options.length > 1;
     
     if (!hasOptions) {
-        // Резервное заполнение, если HTML пуст
         escSelect.innerHTML = '<option value="default">выбрать</option>';
         Object.keys(escDatabase).forEach(key => {
             const option = document.createElement('option');
@@ -243,7 +231,6 @@ function initEscSelection() {
         });
         escSelect.value = 'hobbywing_skywalker_40a';
     } else {
-        // Проверка валидности текущего выбора
         if (!escDatabase[escSelect.value]) {
             escSelect.value = 'hobbywing_skywalker_40a';
         }
@@ -273,7 +260,6 @@ function updateEscParams() {
     }
 }
 
-// --- АККУМУЛЯТОРЫ (BATTERY) (НЕ ПЕРЕПИСЫВАЕМ, если опции уже есть) ---
 function initBatterySelection() {
     const battSelect = document.getElementById('batteryType');
     if (!battSelect) return;
@@ -281,7 +267,6 @@ function initBatterySelection() {
     const hasOptions = battSelect.options.length > 1;
     
     if (!hasOptions) {
-        // Резервное заполнение
         battSelect.innerHTML = '<option value="default">выбрать</option>';
         Object.keys(batteryDatabase).forEach(key => {
             const option = document.createElement('option');
@@ -292,7 +277,6 @@ function initBatterySelection() {
         });
         battSelect.value = 'lipo3000_80_120';
     } else {
-        // Проверка валидности
         if (!batteryDatabase[battSelect.value]) {
             battSelect.value = 'lipo3000_80_120';
         }
@@ -338,7 +322,7 @@ function setFieldValue(id, value) {
 }
 
 // ==========================================
-// 5. ГЛАВНЫЙ РАСЧЕТ (Без изменений, как в предыдущей версии)
+// 5. ГЛАВНЫЙ РАСЧЕТ (ИСПРАВЛЕНО: Wing Loading Logic)
 // ==========================================
 
 function calculateAll() {
@@ -382,7 +366,8 @@ function getInputParameters() {
     return {
         flightWeight: Math.max(safeGetValue('flightWeight', 1500), 0),
         motorCount: Math.max(safeGetValue('motorCount', 1), 1),
-        wingArea: Math.max(safeGetValue('wingArea', 32), 0.1),
+        // ИСПРАВЛЕНИЕ: Дефолтное значение увеличено до 3200 (соответствует 32 дм²)
+        wingArea: Math.max(safeGetValue('wingArea', 3200), 0.1),
         wingSpan: safeGetValue('wingSpan', 1200),
         dragCoefficient: Math.max(safeGetValue('dragCoefficient', 0.03), 0.01),
         flightSpeed: Math.max(safeGetValue('flightSpeed', 80), 0),
@@ -433,11 +418,27 @@ function performCalculations(params, airDensity) {
     results.params = params;
     results.airDensity = airDensity;
     
-    const wingAreaM2 = Math.max(params.wingArea / 10000, 0.001);
+    // --- ЛОГИКА НОРМАЛИЗАЦИИ ПЛОЩАДИ КРЫЛА ---
+    // Предполагаем, что ввод в мм². Но если число слишком маленькое (< 100),
+    // скорее всего пользователь ввел дм² или ошибся.
+    let rawWingArea = params.wingArea;
+    if (rawWingArea < 100) {
+        // Автоматическая корректировка: считаем, что ввели дм², переводим в мм²
+        rawWingArea = rawWingArea * 100; 
+    }
+    
+    const wingAreaM2 = Math.max(rawWingArea / 10000, 0.001);
     const weightKg = Math.max(params.flightWeight / 1000, 0.001);
     
-    results.wingLoading = weightKg / wingAreaM2;
-    results.wingLoadingGdm2 = params.flightWeight / params.wingArea;
+    // Расчет нагрузки на крыло
+    results.wingLoading = weightKg / wingAreaM2; // кг/м²
+    
+    // Для отображения часто используют г/дм²
+    // 1 кг/м² = 10 г/дм²
+    results.wingLoadingGdm2 = results.wingLoading * 10; 
+    
+    // Сохраняем реальную площадь в дм² для вывода
+    results.wingAreaDm2 = rawWingArea / 100;
     
     const clMax = 1.2;
     results.stallSpeed = Math.sqrt((2 * weightKg * PHYSICS.GRAVITY) / (airDensity * wingAreaM2 * clMax));
@@ -488,11 +489,10 @@ function performCalculations(params, airDensity) {
     results.stallThrust = Math.max(results.staticThrust * 0.85, 0);
     results.flowSpeed = (results.propRpm * propPitchM * 60 / 1000) * 3.6;
     
-        const totalStaticThrust = Math.max(results.staticThrust * params.motorCount, 0);
+    const totalStaticThrust = Math.max(results.staticThrust * params.motorCount, 0);
     results.thrustToWeight = totalStaticThrust / Math.max(params.flightWeight, 0.001);
     results.powerLoading = (results.electricalPowerOptimal * params.motorCount) / Math.max(weightKg, 0.001);
     
-    // --- ИСПРАВЛЕНИЕ: Проверка возможности взлета ---
     const usableCapacity = Math.max(capacityAh * PHYSICS.DISCHARGE_SAFETY, 0);
     const averageCurrent = Math.max(results.motorCurrentOptimal * params.motorCount * 0.6, 0);
     
@@ -503,10 +503,7 @@ function performCalculations(params, airDensity) {
         results.minFlightTime = averageCurrent > 0 ? (usableCapacity / averageCurrent) * 60 : 0;
         results.mixedFlightTime = Math.max(results.minFlightTime * 1.3, 0);
     }
-    // ----------------------------------------------
 
-
-    
     results.totalCapacityWh = Math.max(results.batteryEnergy, 0);
     results.usedCapacity = Math.max(usableCapacity * 1000, 0);
     results.theoreticalMaxSpeed = Math.max(results.flowSpeed * 1.15, 0);
@@ -548,7 +545,9 @@ function updateResults(results) {
         return value.toFixed(decimals) + unit;
     }
     
+    // Обновляем отображение нагрузки на крыло
     safeUpdateElement('resultWingLoading', formatValue(results.wingLoadingGdm2, 1, ' г/дм²'));
+    
     safeUpdateElement('resultVoltageUnderLoad', formatValue(results.batteryVoltageUnderLoad, 2, ' В'));
     safeUpdateElement('resultNominalVoltage', formatValue(results.nominalVoltage, 1, ' В'));
     safeUpdateElement('resultEnergy', formatValue(results.batteryEnergy, 2, ' Вт·ч'));
@@ -735,22 +734,20 @@ function initBudgetFilter() {
 }
 
 // ==========================================
-// 8. ГРАФИКИ (ИСПРАВЛЕНО)
+// 8. ГРАФИКИ
 // ==========================================
 
 function initializeCharts() {
     const radarCanvas = document.getElementById('efficiencyRadarChart');
     const powerCanvas = document.getElementById('powerChart');
     
-    // Проверка наличия Canvas элементов
     if (!radarCanvas || !powerCanvas) {
         console.warn('Элементы canvas для графиков не найдены в HTML.');
         return;
     }
 
-    // Проверка наличия библиотеки Chart.js
     if (typeof Chart === 'undefined') {
-        console.error('Библиотека Chart.js не подключена! Добавьте <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> в ваш HTML.');
+        console.error('Библиотека Chart.js не подключена!');
         powerCanvas.parentNode.innerHTML = '<div style="color: #ef4444; text-align: center;">Ошибка: Библиотека графиков не загружена.</div>';
         return;
     }
@@ -826,10 +823,8 @@ function updateCharts(results) {
     if (!efficiencyRadarChart || !powerChart) return;
     
     try {
-        // --- Обновление Radar Chart ---
         const thrustScore = Math.min(100, Math.max(20, results.thrustToWeight * 40));
         
-        // Защита от деления на ноль
         const escMax = results.params.esc.currentContinuous > 0 ? results.params.esc.currentContinuous : 1;
         const escMarginScore = Math.min(100, Math.max(0, (results.currentMarginESC / escMax) * 100));
         
@@ -845,21 +840,17 @@ function updateCharts(results) {
         const speedScore = Math.min(100, Math.max(0, (results.theoreticalMaxSpeed / targetSpeed) * 100));
         
         efficiencyRadarChart.data.datasets[0].data = [thrustScore, escMarginScore, batteryMarginScore, timeScore, efficiencyScore, speedScore];
-        efficiencyRadarChart.update('none'); // 'none' для производительности
+        efficiencyRadarChart.update('none'); 
         
-        // --- Обновление Power Chart (Doughnut) ---
-        // Расчет реальных потерь вместо фиксированных чисел
-        const usefulPower = results.motorEfficiencyOptimal; // % КПД мотора
-        const motorLoss = 100 - usefulPower; // % потерь в моторе
+        const usefulPower = results.motorEfficiencyOptimal; 
+        const motorLoss = 100 - usefulPower; 
         
-        // Расчет потерь в процентах от общей мощности
         const totalPowerW = results.electricalPowerOptimal * results.params.motorCount;
         
         let escLossPercent = 0;
         let battLossPercent = 0;
         
         if (totalPowerW > 0) {
-            // P_loss = I^2 * R
             const currentPerMotor = results.motorCurrentOptimal;
             const escLossW = (currentPerMotor * currentPerMotor * results.params.esc.resistance) * results.params.motorCount;
             
@@ -871,8 +862,6 @@ function updateCharts(results) {
             battLossPercent = (battLossW / totalPowerW) * 100;
         }
         
-        // Нормализация, чтобы сумма была близка к 100% (визуально)
-        // Но лучше показывать абсолютные доли от 100% базы
         const safeUseful = Math.max(0, usefulPower);
         const safeMotorLoss = Math.max(0, motorLoss);
         const safeEscLoss = Math.max(0, escLossPercent);
@@ -886,10 +875,8 @@ function updateCharts(results) {
     }
 }
 
-
-
 // ==========================================
-// 9. СВОДКА С РЕЙТИНГОМ
+// 9. СВОДКА С РЕЙТИНГОМ (Обновлено отображение площади)
 // ==========================================
 
 function updateSummary(results) {
@@ -965,7 +952,8 @@ function updateSummary(results) {
     
     summaryHTML += `<div class="summary-metrics">`;
     summaryHTML += `<div><strong>Тяговооруженность:</strong> ${twr.toFixed(2)}:1</div>`;
-    summaryHTML += `<div><strong>Нагрузка на крыло:</strong> ${results.wingLoading.toFixed(1)} кг/м²</div>`;
+    // Обновленная строка с площадью
+    summaryHTML += `<div><strong>Нагрузка на крыло:</strong> ${results.wingLoading.toFixed(1)} кг/м² <span style="font-size:0.8em; opacity:0.7">(S=${results.wingAreaDm2.toFixed(1)} дм²)</span></div>`;
     summaryHTML += `<div><strong>Удельная мощность:</strong> ${results.powerLoading.toFixed(0)} Вт/кг</div>`;
     summaryHTML += `<div><strong>Время полета:</strong> ${results.mixedFlightTime.toFixed(1)} мин</div>`;
     summaryHTML += `<div><strong>Скорость сваливания:</strong> ${results.stallSpeed.toFixed(1)} км/ч</div>`;
@@ -1174,5 +1162,3 @@ notificationStyles.textContent = `@keyframes slideIn { from { transform: transla
 document.head.appendChild(notificationStyles);
 
 console.log('Configurator PRO loaded successfully');
- 
-
